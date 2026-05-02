@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.music-assistant" path="/org/gnome/shell/extensions/music-assistant/">
+    <key name="server-url" type="s">
+      <default>'http://localhost:8095'</default>
+      <summary>Music Assistant Server URL</summary>
+    </key>
+    <key name="player-id" type="s">
+      <default>''</default>
+      <summary>Specific Player ID to control</summary>
+    </key>
+    <key name="auth-token" type="s">
+      <default>''</default>
+      <summary>Authentication Token (if required)</summary>
+    </key>
+    <key name="use-pwa-command" type="b">
+      <default>true</default>
+      <summary>Use PWA command instead of URL</summary>
+    </key>
+    <key name="pwa-command" type="s">
+      <default>'/opt/brave.com/brave/brave-browser --profile-directory=Default --app-id=fnbncaebhbkkikkaecehbjajngcbgcjo'</default>
+      <summary>Custom command to launch PWA</summary>
+    </key>
+    <key name="show-panel-title" type="b">
+      <default>true</default>
+      <summary>Show song title in the panel button</summary>
+    </key>
+  </schema>
+</schemalist>

@@ -1,0 +1,84 @@
+.panel-button {
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+.panel-button-box {
+    spacing: 6px;
+}
+
+.ma-panel-icon {
+    -st-icon-style: symbolic;
+    margin-right: 2px;
+}
+
+.ma-panel-label {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.popup-menu-container {
+    padding: 12px;
+    min-width: 250px;
+}
+
+.ma-menu-box {
+    spacing: 12px;
+}
+
+.ma-track-info {
+    spacing: 4px;
+}
+
+.ma-track-title {
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+.ma-track-artist {
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.ma-controls-box {
+    spacing: 16px;
+    justify-content: center;
+}
+
+.ma-volume-box {
+    spacing: 10px;
+    padding: 0 10px;
+}
+
+.ma-volume-icon {
+    opacity: 0.7;
+}
+
+.ma-control-icon {
+    padding: 8px;
+    border-radius: 99px;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.ma-control-icon:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.ma-art-icon {
+    border-radius: 12px;
+}
+
+.ma-art-button {
+    border-radius: 12px;
+    padding: 0;
+    margin: 10px;
+    transition: transform 0.2s;
+}
+
+.ma-art-button:hover {
+    transform: scale(1.02);
+}
+
+.ma-art-button:active {
+    transform: scale(0.98);
+}
