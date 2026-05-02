@@ -4,5 +4,6 @@
   "uuid": "ma-control@caralacm.github.com",
   "shell-version": ["46", "47", "48"],
   "url": "https://github.com/caralacm/ma-gnome-extension",
-  "settings-schema": "org.gnome.shell.extensions.music-assistant"
+  "settings-schema": "org.gnome.shell.extensions.music-assistant",
+  "version": 1.0
 }
