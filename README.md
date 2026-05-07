@@ -2,8 +2,6 @@
 
 Una extensión de GNOME Shell para controlar reproductores específicos de **Music Assistant** directamente desde el panel superior.
 
-![Music Assistant Control](https://socialify.git.ci/caralacm/ma-gnome-extension/image?description=Control%20a%20specific%20player%20from%20Music%20Assistant.&font=Inter&name=1&owner=1&pattern=Circuit%20Board&theme=Dark)
-
 ## Características
 
 - 🎵 **Control de reproducción**: Play/Pausa, anterior y siguiente.
