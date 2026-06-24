@@ -1,5 +1,6 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import Shell from 'gi://Shell';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Soup from 'gi://Soup?version=3.0';
@@ -31,7 +32,7 @@ export default class MusicAssistantExtension extends Extension {
         this._settings.connect('changed::server-url', () => this._reconnect());
         this._settings.connect('changed::player-id', () => this._reconnect());
         this._settings.connect('changed::show-panel-title', () => this._updatePanelVisibility());
-        
+
         this._updatePanelVisibility();
     }
 
@@ -47,9 +48,9 @@ export default class MusicAssistantExtension extends Extension {
 
     _createPanelButton() {
         this._panelButton = new PanelMenu.Button(0.5, 'Music Assistant', false);
-        
+
         let box = new St.BoxLayout({ style_class: 'panel-button-box' });
-        
+
         this._icon = new St.Icon({
             icon_name: 'audio-x-generic-symbolic',
             style_class: 'ma-panel-icon',
@@ -65,14 +66,14 @@ export default class MusicAssistantExtension extends Extension {
         box.add_child(this._label);
 
         this._panelButton.add_child(box);
-        
+
         this._panelButton.menu.box.add_style_class_name('popup-menu-container');
-        
+
         this._menuContent = new St.BoxLayout({
             vertical: true,
             style_class: 'ma-menu-box'
         });
-        
+
         let menuItem = new PopupMenu.PopupBaseMenuItem({ activate: false });
         menuItem.add_child(this._menuContent);
         this._panelButton.menu.addMenuItem(menuItem);
@@ -106,7 +107,46 @@ export default class MusicAssistantExtension extends Extension {
                 try {
                     let cmd = this._settings.get_string('pwa-command');
                     if (cmd) {
-                        GLib.spawn_command_line_async(cmd);
+                        try {
+                            let match = cmd.match(/--app-id=([a-z]+)/);
+                            let launched = false;
+                            
+                            if (match) {
+                                let appId = match[1];
+                                let appSystem = Shell.AppSystem.get_default();
+                                let runningApps = appSystem.get_running();
+                                
+                                // Primero intentamos enfocar la app si ya está abierta
+                                for (let i = 0; i < runningApps.length; i++) {
+                                    if (runningApps[i].get_id().includes(appId)) {
+                                        runningApps[i].activate();
+                                        launched = true;
+                                        break;
+                                    }
+                                }
+                                
+                                // Si no está abierta, buscamos el archivo .desktop para iniciarla con contexto
+                                if (!launched) {
+                                    let apps = Gio.AppInfo.get_all();
+                                    for (let i = 0; i < apps.length; i++) {
+                                        let appCmd = apps[i].get_commandline();
+                                        if (appCmd && appCmd.includes(appId)) {
+                                            apps[i].launch([], global.create_app_launch_context(0, -1));
+                                            launched = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            if (!launched) {
+                                let appInfo = Gio.AppInfo.create_from_commandline(cmd, 'Music Assistant', Gio.AppInfoCreateFlags.NONE);
+                                appInfo.launch([], global.create_app_launch_context(0, -1));
+                            }
+                        } catch (err) {
+                            console.warn('Music Assistant: Fallback to GLib spawn', err);
+                            GLib.spawn_command_line_async(cmd);
+                        }
                     }
                 } catch (e) {
                     console.error('Music Assistant: Failed to launch custom command', e);
@@ -119,12 +159,12 @@ export default class MusicAssistantExtension extends Extension {
         this._menuContent.add_child(this._menuArt);
 
         // Info
-        let infoBox = new St.BoxLayout({ 
-            vertical: true, 
+        let infoBox = new St.BoxLayout({
+            vertical: true,
             style_class: 'ma-track-info',
-            x_align: Clutter.ActorAlign.CENTER 
+            x_align: Clutter.ActorAlign.CENTER
         });
-        
+
         this._menuTitle = new ScrollingLabel({
             text: 'No Track',
             width: 250,
@@ -139,13 +179,13 @@ export default class MusicAssistantExtension extends Extension {
             x_align: Clutter.ActorAlign.CENTER
         });
         infoBox.add_child(this._menuArtist);
-        
+
         this._menuContent.add_child(infoBox);
 
         // Volume Slider
-        let volumeBox = new St.BoxLayout({ 
+        let volumeBox = new St.BoxLayout({
             style_class: 'ma-volume-box',
-            vertical: false 
+            vertical: false
         });
         let volIcon = new St.Icon({
             icon_name: 'audio-volume-high-symbolic',
@@ -164,11 +204,11 @@ export default class MusicAssistantExtension extends Extension {
         this._menuContent.add_child(volumeBox);
 
         // Controls
-        let controlsBox = new St.BoxLayout({ 
+        let controlsBox = new St.BoxLayout({
             style_class: 'ma-controls-box',
-            x_align: Clutter.ActorAlign.CENTER 
+            x_align: Clutter.ActorAlign.CENTER
         });
-        
+
         let prevBtn = this._createControlBtn('media-skip-backward-symbolic', () => this._sendCommand('players/cmd/previous'));
         this._playPauseBtn = this._createControlBtn('media-playback-start-symbolic', () => this._togglePlay());
         let nextBtn = this._createControlBtn('media-skip-forward-symbolic', () => this._sendCommand('players/cmd/next'));
@@ -200,7 +240,7 @@ export default class MusicAssistantExtension extends Extension {
                 this._ws = session.websocket_connect_finish(res);
                 this._ws.connect('message', (ws, type, data) => this._onMessage(data));
                 this._ws.connect('closed', () => this._onClosed());
-                
+
                 this._authenticate();
                 this._subscribeToEvents();
                 this._fetchCurrentState();
@@ -240,7 +280,7 @@ export default class MusicAssistantExtension extends Extension {
     _onMessage(data) {
         let text = new TextDecoder().decode(data.toArray());
         let msg = JSON.parse(text);
-        
+
         if (msg.event === 'player_updated' || msg.event === 'queue_updated') {
             this._processPlayerData(msg.data);
         } else if (msg.message_id && msg.result) {
@@ -284,15 +324,15 @@ export default class MusicAssistantExtension extends Extension {
         if (playerId && data.player_id !== playerId) return;
 
         let media = data.current_media;
-        
+
         this._playerState.title = media?.title || 'Nothing playing';
         this._playerState.artist = media?.artist || 'Music Assistant';
         this._playerState.status = data.state || 'stopped';
         this._playerState.volume = data.volume_level || 0;
-        
+
         let newArtUrl = media?.image_url || null;
         let serverUrl = this._settings.get_string('server-url').replace(/\/$/, '');
-        
+
         if (newArtUrl && !newArtUrl.startsWith('http')) {
             newArtUrl = serverUrl + newArtUrl;
         }
@@ -313,8 +353,8 @@ export default class MusicAssistantExtension extends Extension {
         this._menuArtist.text = this._playerState.artist;
 
         let isPlaying = this._playerState.status === 'playing';
-        this._playPauseBtn.get_child().icon_name = isPlaying 
-            ? 'media-playback-pause-symbolic' 
+        this._playPauseBtn.get_child().icon_name = isPlaying
+            ? 'media-playback-pause-symbolic'
             : 'media-playback-start-symbolic';
 
         this._isUpdatingVolume = true;
@@ -331,18 +371,18 @@ export default class MusicAssistantExtension extends Extension {
 
         try {
             let message = Soup.Message.new('GET', this._playerState.artUrl);
-            
+
             let token = this._settings.get_string('auth-token');
             if (token) {
                 message.request_headers.append('Authorization', `Bearer ${token}`);
             }
 
             let bytes = await this._session.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null);
-            
+
             if (message.get_status() !== 200) return;
 
             let stream = Gio.MemoryInputStream.new_from_bytes(bytes);
-            
+
             let pixbuf = await new Promise((resolve, reject) => {
                 GdkPixbuf.Pixbuf.new_from_stream_async(stream, null, (obj, res) => {
                     try {
@@ -352,7 +392,7 @@ export default class MusicAssistantExtension extends Extension {
                     }
                 });
             });
-            
+
             let [success, buffer] = pixbuf.save_to_bufferv('png', [], []);
             if (success) {
                 let gicon = Gio.BytesIcon.new(GLib.Bytes.new(buffer));
